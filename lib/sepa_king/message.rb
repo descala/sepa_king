@@ -83,6 +83,18 @@ module SEPA
         builder.CtrlSum('%.2f' % amount_total)
         builder.InitgPty do
           builder.Nm(account.name)
+
+          # In Spain, BSABESBB does not accept PAIN_008_001_02 without this
+          if @account.is_a? CreditorAccount
+            builder.Id do
+              builder.PrvtId do
+                builder.Othr do
+                  builder.Id(@account.creditor_identifier)
+                end
+              end
+            end
+          end
+
         end
       end
     end
