@@ -20,13 +20,13 @@ Gem::Specification.new do |s|
 
   s.required_ruby_version = '>= 1.9.3'
 
-  s.add_runtime_dependency 'activemodel'
+  s.add_runtime_dependency 'activemodel', '>= 3.0.0'
   s.add_runtime_dependency 'i18n'
   s.add_runtime_dependency 'builder'
   s.add_runtime_dependency 'iban-tools'
 
-  s.add_development_dependency 'bundler', '~> 1.3'
-  s.add_development_dependency 'rspec', '>=2.14'
+  s.add_development_dependency 'bundler'
+  s.add_development_dependency 'rspec', '~> 3.0'
   s.add_development_dependency 'coveralls'
   s.add_development_dependency 'simplecov'
   s.add_development_dependency 'rake'
