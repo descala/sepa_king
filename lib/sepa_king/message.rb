@@ -110,6 +110,13 @@ module SEPA
               end
             end
           end if account.respond_to? :creditor_identifier
+          builder.Id do
+            builder.OrgId do
+              builder.Othr do
+                builder.Id(account.debtor_identifier)
+              end
+            end
+          end if account.respond_to? :debtor_identifier
         end
       end
     end
