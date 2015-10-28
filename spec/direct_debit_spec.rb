@@ -167,6 +167,10 @@ describe SEPA::DirectDebit do
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/GrpHdr/MsgId', /SEPA-KING\/[0-9]+/)
         end
 
+        it 'should have creditor identifier' do
+          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/GrpHdr/InitgPty/Id/OrgId/Othr/Id', direct_debit.account.creditor_identifier)
+        end
+
         it 'should contain <PmtInfId>' do
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/PmtInfId', /SEPA-KING\/[0-9]+\/1/)
         end
@@ -233,8 +237,8 @@ describe SEPA::DirectDebit do
         end
 
         it 'should contain <Dbtr>' do
-          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[1]/Dbtr/Nm', 'Zahlemann  Sohne GbR')
-          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[2]/Dbtr/Nm', 'Meier  Schulze oHG')
+          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[1]/Dbtr/Nm', 'Zahlemann + Sohne GbR')
+          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[2]/Dbtr/Nm', 'Meier + Schulze oHG')
         end
 
         it 'should contain <DbtrAcct>' do

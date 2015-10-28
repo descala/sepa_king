@@ -1,10 +1,10 @@
 # Ruby gem for creating SEPA XML files
 
-[![Build Status](https://secure.travis-ci.org/salesking/sepa_king.png)](http://travis-ci.org/salesking/sepa_king)
-[![Code Climate](https://codeclimate.com/github/salesking/sepa_king.png)](https://codeclimate.com/github/salesking/sepa_king)
-[![Coverage Status](https://coveralls.io/repos/salesking/sepa_king/badge.png)](https://coveralls.io/r/salesking/sepa_king)
-[![Gem Version](https://badge.fury.io/rb/sepa_king.png)](http://badge.fury.io/rb/sepa_king)
-[![Dependency Status](https://gemnasium.com/salesking/sepa_king.png)](https://gemnasium.com/salesking/sepa_king)
+[![Build Status](https://travis-ci.org/salesking/sepa_king.svg)](http://travis-ci.org/salesking/sepa_king)
+[![Code Climate](https://codeclimate.com/github/salesking/sepa_king/badges/gpa.svg)](https://codeclimate.com/github/salesking/sepa_king)
+[![Coverage Status](https://coveralls.io/repos/salesking/sepa_king/badge.svg?branch=master)](https://coveralls.io/r/salesking/sepa_king?branch=master)
+[![Gem Version](https://badge.fury.io/rb/sepa_king.svg)](http://badge.fury.io/rb/sepa_king)
+[![Dependency Status](https://gemnasium.com/salesking/sepa_king.svg)](https://gemnasium.com/salesking/sepa_king)
 
 We love building payment applications! So after developing the [DTAUS library for Ruby](https://github.com/salesking/king_dtaus) we move on with SEPA.
 
@@ -175,7 +175,7 @@ sct.add_transaction(
 
   # OPTIONAL: Unstructured remittance information, in German "Verwendungszweck"
   # String, max. 140 char
-  remittance_information: 'Rechnung vom 22.08.2013'
+  remittance_information: 'Rechnung vom 22.08.2013',
 
   # OPTIONAL: Requested execution date, in German "Ausführungstermin"
   # Date
@@ -224,6 +224,8 @@ class Payment < ActiveRecord::Base
 end
 ```
 
+**Beware:** The SEPA::IBANValidator is strict - e.g. it does not allow any spaces in the IBAN.
+
 Also see:
 * [lib/sepa_king/validator.rb](https://github.com/salesking/sepa_king/blob/master/lib/sepa_king/validator.rb)
 * [lib/sepa_king/transaction/direct_debit_transaction.rb](https://github.com/salesking/sepa_king/blob/master/lib/sepa_king/transaction/direct_debit_transaction.rb)
@@ -249,4 +251,4 @@ https://github.com/salesking/sepa_king/graphs/contributors
 
 Released under the MIT license
 
-Copyright (c) 2013 Georg Leciejewski (SalesKing), Georg Ledermann (https://github.com/ledermann)
+Copyright (c) 2013-2015 Georg Leciejewski (SalesKing), Georg Ledermann (https://github.com/ledermann)
