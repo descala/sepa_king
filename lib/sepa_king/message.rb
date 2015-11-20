@@ -116,7 +116,7 @@ module SEPA
                 builder.Id(account.debtor_identifier)
               end
             end
-          end if account.respond_to? :debtor_identifier
+          end if account.respond_to?(:debtor_identifier) and account.debtor_identifier
         end
       end
     end
