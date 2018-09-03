@@ -8,7 +8,7 @@ describe SEPA::Transaction do
     end
 
     it 'should have default for requested_date' do
-      expect(SEPA::Transaction.new.requested_date).to eq(Date.today.next)
+      expect(SEPA::Transaction.new.requested_date).to eq(Date.new(1999, 1, 1))
     end
 
     it 'should have default for batch_booking' do
@@ -73,6 +73,16 @@ describe SEPA::Transaction do
 
     it 'should not allow invalid value' do
       expect(SEPA::Transaction).not_to accept('', 'X' * 141, for: :remittance_information)
+    end
+  end
+
+  context 'Currency' do
+    it 'should allow valid values' do
+      expect(SEPA::Transaction).to accept('EUR', 'CHF', 'SEK', for: :currency)
+    end
+
+    it 'should not allow invalid values' do
+      expect(SEPA::Transaction).not_to accept('', 'EURO', 'ABCDEF', for: :currency)
     end
   end
 end

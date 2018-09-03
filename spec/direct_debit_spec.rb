@@ -2,6 +2,8 @@
 require 'spec_helper'
 
 describe SEPA::DirectDebit do
+  let(:message_id_regex) { /SEPA-KING\/[0-9a-z_]{22}/ }
+
   let(:direct_debit) {
     SEPA::DirectDebit.new name:                'Gläubiger GmbH',
                           bic:                 'BANKDEFFXXX',
@@ -37,7 +39,7 @@ describe SEPA::DirectDebit do
     it 'returns the id of the batch where the given transactions belongs to (1 batch)' do
       direct_debit.add_transaction(direct_debt_transaction(reference: "EXAMPLE REFERENCE"))
 
-      expect(direct_debit.batch_id("EXAMPLE REFERENCE")).to match(/SEPA-KING\/[0-9]+\/1/)
+      expect(direct_debit.batch_id("EXAMPLE REFERENCE")).to match(/#{message_id_regex}\/1/)
     end
 
     it 'returns the id of the batch where the given transactions belongs to (2 batches)' do
@@ -45,9 +47,9 @@ describe SEPA::DirectDebit do
       direct_debit.add_transaction(direct_debt_transaction(reference: "EXAMPLE REFERENCE 2", requested_date: Date.today.next.next))
       direct_debit.add_transaction(direct_debt_transaction(reference: "EXAMPLE REFERENCE 3"))
 
-      expect(direct_debit.batch_id("EXAMPLE REFERENCE 1")).to match(/SEPA-KING\/[0-9]+\/1/)
-      expect(direct_debit.batch_id("EXAMPLE REFERENCE 2")).to match(/SEPA-KING\/[0-9]+\/2/)
-      expect(direct_debit.batch_id("EXAMPLE REFERENCE 3")).to match(/SEPA-KING\/[0-9]+\/1/)
+      expect(direct_debit.batch_id("EXAMPLE REFERENCE 1")).to match(/#{message_id_regex}\/1/)
+      expect(direct_debit.batch_id("EXAMPLE REFERENCE 2")).to match(/#{message_id_regex}\/2/)
+      expect(direct_debit.batch_id("EXAMPLE REFERENCE 3")).to match(/#{message_id_regex}\/1/)
     end
   end
 
@@ -58,8 +60,8 @@ describe SEPA::DirectDebit do
       direct_debit.add_transaction(direct_debt_transaction(reference: "EXAMPLE REFERENCE 3"))
 
       expect(direct_debit.batches.size).to eq(2)
-      expect(direct_debit.batches[0]).to match(/SEPA-KING\/[0-9]+/)
-      expect(direct_debit.batches[1]).to match(/SEPA-KING\/[0-9]+/)
+      expect(direct_debit.batches[0]).to match(/#{message_id_regex}\/[0-9]+/)
+      expect(direct_debit.batches[1]).to match(/#{message_id_regex}\/[0-9]+/)
     end
   end
 
@@ -164,7 +166,7 @@ describe SEPA::DirectDebit do
         end
 
         it 'should have message_identification' do
-          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/GrpHdr/MsgId', /SEPA-KING\/[0-9]+/)
+          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/GrpHdr/MsgId', message_id_regex)
         end
 
         it 'should have creditor identifier' do
@@ -172,11 +174,11 @@ describe SEPA::DirectDebit do
         end
 
         it 'should contain <PmtInfId>' do
-          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/PmtInfId', /SEPA-KING\/[0-9]+\/1/)
+          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/PmtInfId', /#{message_id_regex}\/1/)
         end
 
         it 'should contain <ReqdColltnDt>' do
-          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/ReqdColltnDt', Date.today.next.iso8601)
+          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/ReqdColltnDt', Date.new(1999, 1, 1).iso8601)
         end
 
         it 'should contain <PmtMtd>' do
@@ -196,7 +198,7 @@ describe SEPA::DirectDebit do
         end
 
         it 'should contain <Cdtr>' do
-          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/Cdtr/Nm', 'Glaubiger GmbH')
+          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/Cdtr/Nm', 'Gläubiger GmbH')
         end
 
         it 'should contain <CdtrAcct>' do
@@ -237,8 +239,8 @@ describe SEPA::DirectDebit do
         end
 
         it 'should contain <Dbtr>' do
-          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[1]/Dbtr/Nm', 'Zahlemann + Sohne GbR')
-          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[2]/Dbtr/Nm', 'Meier + Schulze oHG')
+          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[1]/Dbtr/Nm', 'Zahlemann & Söhne GbR')
+          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[2]/Dbtr/Nm', 'Meier & Schulze oHG')
         end
 
         it 'should contain <DbtrAcct>' do
@@ -248,7 +250,7 @@ describe SEPA::DirectDebit do
 
         it 'should contain <RmtInf>' do
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[1]/RmtInf/Ustrd', 'Unsere Rechnung vom 10.08.2013')
-          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[2]/RmtInf/Ustrd', 'Vielen Dank fur Ihren Einkauf')
+          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[2]/RmtInf/Ustrd', 'Vielen Dank für Ihren Einkauf')
         end
       end
 
@@ -271,8 +273,8 @@ describe SEPA::DirectDebit do
         end
 
         it 'should contain two payment_informations with different <PmtInfId>' do
-          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf[1]/PmtInfId', /SEPA-KING\/[0-9]+\/1/)
-          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf[2]/PmtInfId', /SEPA-KING\/[0-9]+\/2/)
+          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf[1]/PmtInfId', /#{message_id_regex}\/1/)
+          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf[2]/PmtInfId', /#{message_id_regex}\/2/)
         end
       end
 
@@ -385,8 +387,81 @@ describe SEPA::DirectDebit do
         end
 
         it 'should contain two payment_informations with <Cdtr>' do
-          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf[1]/Cdtr/Nm', 'Glaubiger GmbH')
+          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf[1]/Cdtr/Nm', 'Gläubiger GmbH')
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf[2]/Cdtr/Nm', 'Creditor Inc.')
+        end
+      end
+
+      context 'with mandate amendments' do
+        subject do
+          sdd = direct_debit
+
+          sdd.add_transaction(direct_debt_transaction.merge(original_debtor_account: 'NL08RABO0135742099'))
+          sdd.add_transaction(direct_debt_transaction.merge(same_mandate_new_debtor_agent: true))
+          sdd.to_xml
+        end
+
+        it 'should include amendment indicator' do
+          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[1]/DrctDbtTx/MndtRltdInf/AmdmntInd', 'true')
+          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[2]/DrctDbtTx/MndtRltdInf/AmdmntInd', 'true')
+        end
+
+        it 'should include amendment information details' do
+          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[1]/DrctDbtTx/MndtRltdInf/AmdmntInfDtls/OrgnlDbtrAcct/Id/IBAN', 'NL08RABO0135742099')
+          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[2]/DrctDbtTx/MndtRltdInf/AmdmntInfDtls/OrgnlDbtrAgt/FinInstnId/Othr/Id', 'SMNDA')
+        end
+      end
+
+      context 'with instruction given' do
+        subject do
+          sct = direct_debit
+
+          sct.add_transaction(direct_debt_transaction.merge(instruction: '1234/ABC'))
+
+          sct.to_xml
+        end
+
+        it 'should create valid XML file' do
+          expect(subject).to validate_against('pain.008.003.02.xsd')
+        end
+
+        it 'should contain <InstrId>' do
+          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[1]/PmtId/InstrId', '1234/ABC')
+        end
+      end
+
+      context 'with a different currency given' do
+        subject do
+          sct = direct_debit
+
+          sct.add_transaction(direct_debt_transaction.merge(instruction: '1234/ABC', currency: 'SEK'))
+
+          sct
+        end
+
+        it 'should validate against pain.001.001.03' do
+          expect(subject.to_xml(SEPA::PAIN_008_001_02)).to validate_against('pain.008.001.02.xsd')
+        end
+
+        it 'should have a CHF Ccy' do
+          doc = Nokogiri::XML(subject.to_xml('pain.008.001.02'))
+          doc.remove_namespaces!
+
+          nodes = doc.xpath('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[1]/InstdAmt')
+          expect(nodes.length).to eql(1)
+          expect(nodes.first.attribute('Ccy').value).to eql('SEK')
+        end
+
+        it 'should fail for pain.008.002.02' do
+          expect {
+            subject.to_xml(SEPA::PAIN_008_002_02)
+          }.to raise_error(RuntimeError)
+        end
+
+        it 'should fail for pain.008.003.02' do
+          expect {
+            subject.to_xml(SEPA::PAIN_008_003_02)
+          }.to raise_error(RuntimeError)
         end
       end
     end
