@@ -2,6 +2,7 @@
 require 'spec_helper'
 
 describe SEPA::CreditTransfer do
+  let(:message_id_regex) { /SEPA-KING\/[0-9a-z_]{22}/ }
   let(:credit_transfer) {
     SEPA::CreditTransfer.new name:       'Schuldner GmbH',
                              bic:        'BANKDEFFXXX',
@@ -59,6 +60,12 @@ describe SEPA::CreditTransfer do
 
         it 'should create valid XML file' do
           expect(subject.to_xml).to validate_against('pain.001.003.03.xsd')
+        end
+
+        it 'should fail for pain.001.001.03' do
+          expect {
+            subject.to_xml(SEPA::PAIN_001_001_03)
+          }.to raise_error(RuntimeError)
         end
 
         it 'should fail for pain.001.002.03' do
@@ -120,15 +127,15 @@ describe SEPA::CreditTransfer do
         end
 
         it 'should have message_identification' do
-          expect(subject).to have_xml('//Document/CstmrCdtTrfInitn/GrpHdr/MsgId', /SEPA-KING\/[0-9]+/)
+          expect(subject).to have_xml('//Document/CstmrCdtTrfInitn/GrpHdr/MsgId', message_id_regex)
         end
 
         it 'should contain <PmtInfId>' do
-          expect(subject).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/PmtInfId', /SEPA-KING\/[0-9]+\/1/)
+          expect(subject).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/PmtInfId', /#{message_id_regex}\/1/)
         end
 
         it 'should contain <ReqdExctnDt>' do
-          expect(subject).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/ReqdExctnDt', Date.today.next.iso8601)
+          expect(subject).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/ReqdExctnDt', Date.new(1999, 1, 1).iso8601)
         end
 
         it 'should contain <PmtMtd>' do
@@ -209,8 +216,8 @@ describe SEPA::CreditTransfer do
         end
 
         it 'should contain two payment_informations with different <PmtInfId>' do
-          expect(subject).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf[1]/PmtInfId', /SEPA-KING\/[0-9]+\/1/)
-          expect(subject).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf[2]/PmtInfId', /SEPA-KING\/[0-9]+\/2/)
+          expect(subject).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf[1]/PmtInfId', /#{message_id_regex}\/1/)
+          expect(subject).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf[2]/PmtInfId', /#{message_id_regex}\/2/)
         end
       end
 
@@ -264,6 +271,92 @@ describe SEPA::CreditTransfer do
           expect(subject).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf[2]/CtrlSum', '2.00')
           expect(subject).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf[3]/CtrlSum', '4.00')
           expect(subject).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf[4]/CtrlSum', '8.00')
+        end
+      end
+
+      context 'with instruction given' do
+        subject do
+          sct = credit_transfer
+
+          sct.add_transaction name:                   'Telekomiker AG',
+                              iban:                   'DE37112589611964645802',
+                              amount:                 102.50,
+                              instruction:            '1234/ABC'
+
+          sct.to_xml
+        end
+
+        it 'should create valid XML file' do
+          expect(subject).to validate_against('pain.001.003.03.xsd')
+        end
+
+        it 'should contain <InstrId>' do
+          expect(subject).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf[1]/PmtId/InstrId', '1234/ABC')
+        end
+      end
+
+      context 'with a different currency given' do
+        subject do
+          sct = credit_transfer
+
+          sct.add_transaction name:                   'Telekomiker AG',
+                              iban:                   'DE37112589611964645802',
+                              bic:                    'PBNKDEFF370',
+                              amount:                 102.50,
+                              currency:               'CHF'
+
+          sct
+        end
+
+        it 'should validate against pain.001.001.03' do
+          expect(subject.to_xml('pain.001.001.03')).to validate_against('pain.001.001.03.xsd')
+        end
+
+        it 'should have a CHF Ccy' do
+          doc = Nokogiri::XML(subject.to_xml('pain.001.001.03'))
+          doc.remove_namespaces!
+
+          nodes = doc.xpath('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf[1]/Amt/InstdAmt')
+          expect(nodes.length).to eql(1)
+          expect(nodes.first.attribute('Ccy').value).to eql('CHF')
+        end
+
+        it 'should fail for pain.001.002.03' do
+          expect {
+            subject.to_xml(SEPA::PAIN_001_002_03)
+          }.to raise_error(RuntimeError)
+        end
+
+        it 'should fail for pain.001.003.03' do
+          expect {
+            subject.to_xml(SEPA::PAIN_001_003_03)
+          }.to raise_error(RuntimeError)
+        end
+      end
+
+      context 'with a transaction without a bic' do
+        subject do
+          sct = credit_transfer
+
+          sct.add_transaction name:                   'Telekomiker AG',
+                              iban:                   'DE37112589611964645802',
+                              amount:                 102.50
+
+          sct
+        end
+
+        it 'should validate against pain.001.001.03' do
+          expect(subject.to_xml('pain.001.001.03')).to validate_against('pain.001.001.03.xsd')
+        end
+
+        it 'should fail for pain.001.002.03' do
+          expect {
+            subject.to_xml(SEPA::PAIN_001_002_03)
+          }.to raise_error(RuntimeError)
+        end
+
+        it 'should validate against pain.001.003.03' do
+          expect(subject.to_xml(SEPA::PAIN_001_003_03)).to validate_against('pain.001.003.03.xsd')
         end
       end
     end

@@ -83,16 +83,57 @@ module SEPA
       end
     end
 
+    def build_amendment_informations(builder, transaction)
+      builder.AmdmntInd(true)
+      builder.AmdmntInfDtls do
+        if transaction.original_debtor_account
+          builder.OrgnlDbtrAcct do
+            builder.Id do
+              builder.IBAN(transaction.original_debtor_account)
+            end
+          end
+        elsif transaction.same_mandate_new_debtor_agent
+          builder.OrgnlDbtrAgt do
+            builder.FinInstnId do
+              builder.Othr do
+                builder.Id('SMNDA')
+              end
+            end
+          end
+        end
+        if transaction.original_creditor_account
+          builder.OrgnlCdtrSchmeId do
+            if transaction.original_creditor_account.name
+              builder.Nm(transaction.original_creditor_account.name)
+            end
+            if transaction.original_creditor_account.creditor_identifier
+              builder.Id do
+                builder.PrvtId do
+                  builder.Othr do
+                    builder.Id(transaction.original_creditor_account.creditor_identifier)
+                  end
+                end
+              end
+            end
+          end
+        end
+      end
+    end
+
     def build_transaction(builder, transaction)
       builder.DrctDbtTxInf do
         builder.PmtId do
+          if transaction.instruction.present?
+            builder.InstrId(transaction.instruction)
+          end
           builder.EndToEndId(transaction.reference)
         end
-        builder.InstdAmt('%.2f' % transaction.amount, Ccy: 'EUR')
+        builder.InstdAmt('%.2f' % transaction.amount, Ccy: transaction.currency)
         builder.DrctDbtTx do
           builder.MndtRltdInf do
             builder.MndtId(transaction.mandate_id)
             builder.DtOfSgntr(transaction.mandate_date_of_signature.iso8601)
+            build_amendment_informations(builder, transaction) if transaction.amendment_informations?
           end
         end
         builder.DbtrAgt do
@@ -108,6 +149,13 @@ module SEPA
         end
         builder.Dbtr do
           builder.Nm(transaction.name)
+          if transaction.debtor_address
+            builder.PstlAdr do
+              builder.Ctry transaction.debtor_address.country_code
+              builder.AdrLine transaction.debtor_address.address_line1
+              builder.AdrLine transaction.debtor_address.address_line2
+            end
+          end
         end
         builder.DbtrAcct do
           builder.Id do
